@@ -21,7 +21,8 @@ Fn_Rotate_Matrix <- function(mat) {
 test2 = Fn_Rotate_Matrix(as.matrix(test))
 
 library(ggplot2)
-test.df = data.frame(x = rep(1:720, 360), y = rep(1:360, each = 720), rain = c(test2))
+test.df = data.frame(x = rep(1:720, 360), y = rep(1:360, each = 720),
+                     rain = c(test2))
 
 ggplot(data = test.df, aes(x = x, y = y, fill = log(rain + 1))) +
     geom_tile()
@@ -40,7 +41,8 @@ library(neuralnet)
 x.df = data.frame(cbind(y, x))
 train.df = x.df[1:(obs * 0.75), ]
 pred.df = x.df[(obs * 0.75 + 1):obs, ]
-nn.formula = as.formula(paste0("y ~ ", paste0(colnames(x.df)[-1], collapse = " + ")))
+nn.formula = as.formula(paste0("y ~ ",
+                               paste0(colnames(x.df)[-1], collapse = " + ")))
 test.nn = neuralnet(nn.formula, hidden = 5, data = train.df)
 
 library(caret)
@@ -48,8 +50,8 @@ control.nn = trainControl(number = 3)
 grid.nn = expand.grid(layer1 = c(5, 10, 15, 20), layer2 = 0, layer3 = 0)
 system.time(
 {
-    test.fit = train(nn.formula, data = train.df, method = "neuralnet", tuneGrid = grid.nn,
-                     trControl = control.nn)
+    test.fit = train(nn.formula, data = train.df, method = "neuralnet",
+                     tuneGrid = grid.nn, trControl = control.nn)
 })
 
 
@@ -75,10 +77,12 @@ mse(pred.df$y, pred.nn2)
 
 library(forecast)
 n = 300
-maxLag = 5
+maxLag = 10
 predTime = (n * 0.75 + 1):(n)
+arModel = rexp(sample(5, size = 1))
+arCoef = arModel/(sum(arModel) + runif(1, 1e-7, 0.2))
 test.df =
-    data.frame(sim = c(arima.sim(model = list(ar = c(0.6, 0.3, 0.05)), n = n)))
+    data.frame(sim = c(arima.sim(model = list(ar = arCoef), n = n)))
 shift = function(x, lag){
     n = length(x)
     c(rep(NA, lag), x[1:(n - lag)])
@@ -93,21 +97,30 @@ pred.df = test.df[(n * 0.75 + 1):n, ]
 
 (baseModel = auto.arima(test.df$sim[1:(n * 0.75)]))
 
-nn.formula = as.formula(paste0("sim ~ ", paste0(colnames(train.df)[-1], collapse = " + ")))
+nn.formula =
+    as.formula(paste0("sim ~ ", paste0(colnames(train.df)[-1], collapse = " + ")))
 control.nn = trainControl(number = 3)
-grid.nn = expand.grid(layer1 = c(5, 10, 15, 20), layer2 = 0, layer3 = 0)
+grid.nn = expand.grid(layer1 = c(1, 2, 3), layer2 = 0, layer3 = 0)
 system.time(
 {
-    nnModel = train(nn.formula, data = train.df, method = "neuralnet", tuneGrid = grid.nn,
-                    trControl = control.nn)
+    nnModel = train(nn.formula, data = train.df, method = "neuralnet",
+                    tuneGrid = grid.nn, trControl = control.nn)
 })
 
 plot(test.df$sim, type = "l")
 ## lines(test.df$sim[1:(n * 0.75)], col = "red", lty = 2)
 basePred = predict(baseModel, n.ahead = n * 0.25)$pred
 lines(basePred, col = "red", lty = 2)
-nnPred = predict(nnModel, newdata = pred.df[, -1])
-lines(predTime, nnPred, col = "steelblue", lty = 2)
+pred = c()
+newPred.df = train.df[1, -1]
+for(i in 1:length(predTime)){
+    tailLag = maxLag - length(pred)
+    if(tailLag > 0)
+        newreg = tail(train.df$sim, tailLag)
+    newPred.df[1, ] = c(pred, rev(newreg))[1:maxLag]
+    pred[i] = predict(nnModel, newdata = newPred.df)
+}
+lines(predTime, pred, col = "steelblue", lty = 2)
 
 mse(test.df$sim[predTime], basePred)
 mse(test.df$sim[predTime], nnPred)
@@ -122,7 +135,8 @@ cerealQuery = data.frame(elementCode = c(5510, 5510, 5510),
 cereals = getFAOtoSYB(query = cerealQuery)
 wfbs = cereals$aggregates[cereals$aggregates$FAOST_CODE == 5000, ]
 ## colnames(wfbs)[colnames(wfbs) == "QC_1717_5510"] = "total_cereal_prod"
-colnames(wfbs)[colnames(wfbs) %in% c("QC_15_5510", "QC_27_5510", "QC_56_5510")] = c("total_wheat_prod", "total_rice_prod", "total_maize_prod")
+colnames(wfbs)[colnames(wfbs) %in% c("QC_15_5510", "QC_27_5510", "QC_56_5510")] =
+    c("total_wheat_prod", "total_rice_prod", "total_maize_prod")
 
 
 n = NROW(wfbs)
@@ -145,13 +159,14 @@ pred.df = test.df[(n * 0.75 + 1):n, ]
 
 (baseModel = auto.arima(test.df$sim[1:(n * 0.75)]))
 
-nn.formula = as.formula(paste0("sim ~ ", paste0(colnames(train.df)[-1], collapse = " + ")))
+nn.formula =
+    as.formula(paste0("sim ~ ", paste0(colnames(train.df)[-1], collapse = " + ")))
 control.nn = trainControl(number = 3)
 grid.nn = expand.grid(layer1 = c(1:5), layer2 = 0, layer3 = 0)
 system.time(
 {
-    nnModel = train(nn.formula, data = train.df, method = "neuralnet", tuneGrid = grid.nn,
-                    trControl = control.nn)
+    nnModel = train(nn.formula, data = train.df, method = "neuralnet",
+                    tuneGrid = grid.nn, trControl = control.nn)
 })
 
 plot(test.df$sim, type = "l")

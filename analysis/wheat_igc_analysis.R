@@ -2,8 +2,9 @@
 library(forecast)
 library(quantmod)
 library(glmnet)
+library(caret)
 
-## Read the data
+## Read the wheat IGC data
 wheat_igc.df = read.csv(file = "wheat_index_igc.csv")
 wheat_igc.df$date = as.Date(wheat_igc.df$date, "%m/%d/%Y")
 
@@ -14,35 +15,11 @@ with(wheat_igc.df,
 }
 )
 
-## Split the data
-n = NROW(wheat_igc.df)
-train_pct = 0.9
-wheat_igc_train.df = wheat_igc.df[1:(n * train_pct), ]
-wheat_igc_test.df = wheat_igc.df[(n * train_pct+ 1):n, ]
-
-## Test auto.arima
-##
-## NOTE (Michael): For simplicity, we will ignore the unevenly spaced
-##                 intervals.
-
-wigc.model =
-    auto.arima(x = wheat_igc_train.df$wheat_index_igc,
-               xreg = wheat_igc_train.df$date)
-
-
-with(wheat_igc.df,
-{
-    plot(date, wheat_index_igc, type = "l")
-    pred = predict(wigc.model, newxreg = wheat_igc_test.df$date)$pred
-    lines(wheat_igc_test.df$date, pred, lty = 2, col = "red")
-}
-)
-
 
 ## Get exchange rate data
 exchange_rate_basket =
     paste0("USD/", c("EUR", "JPY", "GBP", "CHF", "CAD", "AUD", "NZD", "ZAR",
-                     "RMB", "INR", "RUB", "PKR", "UAH", "TRY"))
+                     "HKD", "INR", "RUB", "PKR", "UAH", "TRY"))
 
 
 
@@ -76,36 +53,85 @@ exchange_rates =
                      to = max(wheat_igc.df$date))
 
 
-final_wheat.xts = merge(wheat_igc =
-                            as.xts(wheat_igc.df$wheat_index_igc,
-                                   order.by = wheat_igc.df$date),
-                        exchange_rates)
+final_wheat.xts =
+    na.omit(merge(wheat_igc =
+                      as.xts(wheat_igc.df$wheat_index_igc,
+                             order.by = wheat_igc.df$date),
+                  exchange_rates))
+final.df = as.data.frame(final_wheat.xts)
+for(i in colnames(final.df)[2:NCOL(final.df)]){
+    for(j in 1:31){
+        new_name = paste0(i, "_lag", j)
+        final.df[[new_name]] = lag(final.df[[i]], j)
+    }
+}
 
-cor(na.omit(as.data.frame(final_wheat.xts)))
+no_missing.df = na.omit(final.df)
 
-## Post processing data
-final.mat = as.matrix(na.omit(final_wheat.xts))
-n = NROW(final.mat)
+
+## predictable equals to positive CCF
+
+## TODO (Michael): Should create lagged data
+
+
+## Split the data for training and testing
+##
+## CHECK (Michael): Check the partition function in caret
+
+n = NROW(no_missing.df)
 train_pct = 0.9
-train.mat = final.mat[1:(n * train_pct), ]
-test.mat = final.mat[(n * train_pct + 1):n, ]
+train.df = no_missing.df[1:(n * train_pct), ]
+test.df = no_missing.df[(n * train_pct + 1):n, ]
+
+## Create formula
+wheat.formula =
+    as.formula(paste0("wheat_igc ~ ",
+                      paste0(gsub("/", ".", colnames(final.df)[-1]),
+                             collapse = "+")))
 
 ## Arima Model
 arima.fit =
-    auto.arima(x = train.mat[, 1],
-               xreg = as.Date(rownames(train.mat)))
-arima.pred = predict(arima.fit, newxreg = as.Date(rownames(test.mat)))$pred
+    auto.arima(x = train.df[, 1],
+               xreg = as.Date(rownames(train.df)))
+arima.pred = predict(arima.fit, newxreg = as.Date(rownames(test.df)))$pred
 
 ## Lasso Model
-lasso.fit = cv.glmnet(x = train.mat[, -1], y = log(train.mat[, 1]),
-                      type.measure = "mse", nfolds = 50)
-lasso.pred = predict(lasso.fit, newx = test.mat[, -1])
+lasso.fit = cv.glmnet(x = as.matrix(train.df[, -1]),
+                      y = log(as.matrix(train.df[, 1])),
+                      type.measure = "mse", nfolds = 10)
+lasso.pred = predict(lasso.fit, newx = as.matrix(test.df[, -1]))
 
 
-plot(as.Date(rownames(final.mat)), final.mat[, 1],
-     ylim = c(0, max(final.mat[, 1])), type = "l")
-lines(as.Date(rownames(train.mat[, -1])), fitted(arima.fit), col = "red", lty = 2)
-lines(as.Date(rownames(test.mat[, -1])), arima.pred, col = "red", lty = 2)
-lines(as.Date(rownames(train.mat[, -1])), exp(predict(lasso.fit, newx = train.mat[, -1])), col = "steelblue", lty = 2)
-lines(as.Date(rownames(test.mat[, -1])), exp(lasso.pred),
+## Neural Nets
+grid.nn = expand.grid(layer1 = 1:5, layer2 = 0, layer3 = 0)
+control.nn = trainControl(number = 3)
+nn.fit = train(wheat.formula,
+               data = train.df, method = "neuralnet",
+               tuneGrid = grid.nn, trControl = control.nn)
+nn.pred = predict(nn.fit, test.df[, -1])
+
+
+## Lasso, but the cv.glmnet seems to be much faster
+## grid.lasso = expand.grid(fraction = seq(0, 1, length = 10))
+## lasso.fit = train(wheat.formula, data = train.df,
+##                   method = "lasso", tuneGrid = grid.lasso)
+## lasso.pred = predict(lasso.fit, test.df[, -1])
+
+plot(as.Date(rownames(final.df)), final.df[, 1],
+     ylim = c(0, max(final.df[, 1])), type = "l")
+lines(as.Date(rownames(train.df[, -1])), fitted(arima.fit), col = "red", lty = 2)
+lines(as.Date(rownames(test.df[, -1])), arima.pred, col = "red", lty = 2)
+lines(as.Date(rownames(train.df[, -1])),
+      exp(predict(lasso.fit, newx = as.matrix(train.df[, -1]))),
       col = "steelblue", lty = 2)
+lines(as.Date(rownames(test.df[, -1])), exp(lasso.pred),
+      col = "steelblue", lty = 2)
+lines(as.Date(rownames(test.df[, -1])), nn.pred, col = "green", lty = 2)
+
+
+## lines(as.Date(rownames(train.df[, -1])),
+##       predict(blasso.fit, as.data.frame(train.df[, -1])),
+##       col = "orange", lty = 2)
+## lines(as.Date(rownames(test.df[, -1])), blasso.pred, col = "orange", lty = 2)
+
+

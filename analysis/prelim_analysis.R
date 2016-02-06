@@ -61,7 +61,7 @@ with(sorted.df,
     plot(Food.Price.Index, usdFx)
     abline(lm(usdFx ~ Food.Price.Index), col = "red", lty = 2)
     ccf(Food.Price.Index, usdFx)
-}
+})
 
 ## It would appear that the us exchange rate has a 1 month lead ahead
 ## of the food price index, the correlation is negative.

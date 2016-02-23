@@ -75,3 +75,35 @@ predictin the production.
 
 2. Constructe the factor datasets which are relevant for predicting
 the expectation of the price and feed it into the neural network.
+
+------------------------------------------------------------------------
+
+Second meeting with Adam:
+
+New insights:
+
+1. It appears that the exchange rates are not good predictors nor they
+appear to drive the price of wheat. The data shows that the rolling
+correlation between the variables can range from -1 to +1. Further
+from the running correlation, it would suggests that there does not
+have a meaningful model in the linear sense, and if any link is to be
+established, it would have to be non-linear.
+
+2. The Cross-correlation function also suggests that exchanges rate is
+not the lead variable, rather it is the lagged variable if there is
+any relationship.
+
+3. It would appear that the exchange rate only correlates highly with
+the wheat price over certain period. In particularly during the food
+price crisis over the period from 2007 to 2008.
+
+4. There seems to be high correlation and predictive power when the
+crude oil price is included in the explanatory set.
+
+
+Questions:
+
+* What should we do next? I think we need to continue to explore other
+  possible explanatory variables such as production. Can explanation
+  can be done without a good model. But at least we know that exchange
+  rate does not have a major role in driving the price of wheat.

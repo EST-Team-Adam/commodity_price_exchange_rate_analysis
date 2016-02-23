@@ -161,47 +161,47 @@ lm.pred = predict(lm.fit, newdata = test.df)
 ##                   method = "lasso", tuneGrid = grid.lasso)
 ## lasso.pred = predict(lasso.fit, test.df[, -1])
 
-## plot(as.Date(rownames(final.df)), final.df[, 1],
-##      ylim = c(0, max(final.df[, 1])), type = "l") 
-##      ## ylim = c(0, 1000), type = "l")
-## lines(as.Date(rownames(train.df[, -1])), fitted(arima.fit), col = "red", lty = 2)
-## lines(as.Date(rownames(test.df[, -1])), arima.pred, col = "red", lty = 2)
-## lines(as.Date(rownames(train.df[, -1])),
-##       predict(lasso.fit, newx = as.matrix(train.df[, -1])),
-##       col = "steelblue", lty = 2)
-## lines(as.Date(rownames(test.df[, -1])), lasso.pred,
-##       col = "steelblue", lty = 2)
-## ## lines(as.Date(rownames(train.df[, -1])),
-## ##       compute(nn.fit, train.df[, -1])$net.result, col = "green", lty = 2)
-## ## lines(as.Date(rownames(test.df[, -1])), nn.pred, col = "green", lty = 2)
-## lines(as.Date(rownames(train.df[, -1])),
-##       predict(lm.fit, newdata = train.df[, -1]), col = "violet", lty = 2)
-## lines(as.Date(rownames(test.df[, -1])), lm.pred, col = "violet", lty = 2)
-## ## lines(as.Date(rownames(train.df[, -1])),
-## ##       predict(lm.fit2, newdata = train.df[, -1]), col = "orange", lty = 2)
-## ## lines(as.Date(rownames(test.df[, -1])), lm.pred2, col = "orange", lty = 2)
-
-
-
 plot(as.Date(rownames(final.df)), final.df[, 1],
      ylim = c(0, max(final.df[, 1])), type = "l") 
      ## ylim = c(0, 1000), type = "l")
-lines(as.Date(rownames(train.df[, -1])), exp(fitted(arima.fit)), col = "red", lty = 2)
-lines(as.Date(rownames(test.df[, -1])), exp(arima.pred), col = "red", lty = 2)
+lines(as.Date(rownames(train.df[, -1])), fitted(arima.fit), col = "red", lty = 2)
+lines(as.Date(rownames(test.df[, -1])), arima.pred, col = "red", lty = 2)
 lines(as.Date(rownames(train.df[, -1])),
-      exp(predict(lasso.fit, newx = as.matrix(train.df[, -1]))),
+      predict(lasso.fit, newx = as.matrix(train.df[, -1])),
       col = "steelblue", lty = 2)
-lines(as.Date(rownames(test.df[, -1])), exp(lasso.pred),
+lines(as.Date(rownames(test.df[, -1])), lasso.pred,
       col = "steelblue", lty = 2)
 ## lines(as.Date(rownames(train.df[, -1])),
 ##       compute(nn.fit, train.df[, -1])$net.result, col = "green", lty = 2)
 ## lines(as.Date(rownames(test.df[, -1])), nn.pred, col = "green", lty = 2)
 lines(as.Date(rownames(train.df[, -1])),
-      exp(predict(lm.fit, newdata = train.df[, -1])), col = "violet", lty = 2)
-lines(as.Date(rownames(test.df[, -1])), exp(lm.pred), col = "violet", lty = 2)
+      predict(lm.fit, newdata = train.df[, -1]), col = "violet", lty = 2)
+lines(as.Date(rownames(test.df[, -1])), lm.pred, col = "violet", lty = 2)
 ## lines(as.Date(rownames(train.df[, -1])),
 ##       predict(lm.fit2, newdata = train.df[, -1]), col = "orange", lty = 2)
 ## lines(as.Date(rownames(test.df[, -1])), lm.pred2, col = "orange", lty = 2)
+
+
+
+## plot(as.Date(rownames(final.df)), final.df[, 1],
+##      ylim = c(0, max(final.df[, 1])), type = "l") 
+##      ## ylim = c(0, 1000), type = "l")
+## lines(as.Date(rownames(train.df[, -1])), exp(fitted(arima.fit)), col = "red", lty = 2)
+## lines(as.Date(rownames(test.df[, -1])), exp(arima.pred), col = "red", lty = 2)
+## lines(as.Date(rownames(train.df[, -1])),
+##       exp(predict(lasso.fit, newx = as.matrix(train.df[, -1]))),
+##       col = "steelblue", lty = 2)
+## lines(as.Date(rownames(test.df[, -1])), exp(lasso.pred),
+##       col = "steelblue", lty = 2)
+## ## lines(as.Date(rownames(train.df[, -1])),
+## ##       compute(nn.fit, train.df[, -1])$net.result, col = "green", lty = 2)
+## ## lines(as.Date(rownames(test.df[, -1])), nn.pred, col = "green", lty = 2)
+## lines(as.Date(rownames(train.df[, -1])),
+##       exp(predict(lm.fit, newdata = train.df[, -1])), col = "violet", lty = 2)
+## lines(as.Date(rownames(test.df[, -1])), exp(lm.pred), col = "violet", lty = 2)
+## ## lines(as.Date(rownames(train.df[, -1])),
+## ##       predict(lm.fit2, newdata = train.df[, -1]), col = "orange", lty = 2)
+## ## lines(as.Date(rownames(test.df[, -1])), lm.pred2, col = "orange", lty = 2)
 
 
 plot(as.zoo(no_missing.df))
@@ -233,23 +233,23 @@ lines(c(fitted(lm.fit2), lm.pred2), col = "red")
 
 
 n = NROW(no_missing.df)
-train_pct = 0.5
+train_pct = 0.6
 cut_point = round(n * train_pct)
 train.df = no_missing.df[1:cut_point, ]
 test.df = no_missing.df[(cut_point + 1):n, ]
 
 ## Testing with Granger's causality
-arima.fit = auto.arima(x = train.df[, 1])
+arima.fit = auto.arima(x = log(train.df[, 1]))
 arima.pred = predict(arima.fit, n.ahead = NROW(test.df))$pred
 
-varima.fit = auto.arima(x = train.df[, 1], xreg = train.df[, -1])
+varima.fit = auto.arima(x = log(train.df[, 1]), xreg = train.df[, -1])
 varima.pred = predict(varima.fit, newxreg = test.df[, -1])$pred
 
 plot(as.Date(rownames(final.df)), final.df$wheat_igc, type = "l")
-lines(as.Date(rownames(final.df))[-1],
-      c(fitted(arima.fit), arima.pred), col = "red")
-lines(as.Date(rownames(final.df))[-1],
-      c(fitted(varima.fit), varima.pred), col = "green")
+lines(as.Date(rownames(final.df)),
+      exp(c(fitted(arima.fit), arima.pred)), col = "red")
+lines(as.Date(rownames(final.df)),
+      exp(c(fitted(varima.fit), varima.pred)), col = "green")
 
 sse = function(y, yhat){
     sum((y - yhat)^2)
@@ -263,3 +263,127 @@ sse(test.df$wheat_igc, varima.pred)
 
 ## url = "http://www.quandl.com/api/v1/datasets/CHRIS/CME_CL1.csv"
 ## oilFut = read.csv(file = url)
+
+
+with(no_missing.df,
+{
+     plot(as.Date(rownames(no_missing.df)), wheat_igc, type = "l",
+          ylim = c(0, 450))
+     lines(as.Date(rownames(no_missing.df)), oil_future, col = "red", lty = 2)
+})
+
+
+wheat_future.df = no_missing.df[, c("oil_future", "wheat_igc")]
+
+for(i in 1:150){
+    new_name = paste0("wheat_lag", i)
+    wheat_future.df[[new_name]] = c(rep(NA, i), wheat_future.df[["wheat_igc"]][(1:(NROW(wheat_future.df) - i))])
+}
+wheat_oil_final.df = na.omit(wheat_future.df)
+
+n = NROW(wheat_oil_final.df)
+train_pct = 0.8
+cut_point = round(n * train_pct)
+train.df = wheat_oil_final.df[1:cut_point, ]
+test.df = wheat_oil_final.df[(cut_point + 1):n, ]
+
+## test.lm = lm(oil_future ~ ., data = train.df)
+
+lasso.fit = cv.glmnet(x = as.matrix(train.df[, -1]),
+                      y = as.matrix(train.df[, 1]),
+                      type.measure = "mse", nfolds = 20)
+lasso.pred = predict(lasso.fit, newx = as.matrix(test.df[, -1]))
+
+test_formula = as.formula(paste0("oil_future ~ ", paste0(colnames(train.df)[-1], collapse = " + ")))
+nn.fit = train(test_formula,
+               data = train.df, method = "neuralnet")
+nn.pred = predict(nn.fit, test.df)
+
+with(no_missing.df,
+{
+     plot(as.Date(rownames(no_missing.df)), oil_future, type = "l",
+          ylim = c(0, 300))
+     ## lines(as.Date(rownames(train.df)), fitted(test.lm), col = "green", lty = 2)
+     ## lines(as.Date(rownames(test.df)), predict(test.lm, test.df), col = "red", lty = 2)
+     lines(as.Date(rownames(train.df)), predict(lasso.fit, newx = as.matrix(train.df[, -1])), col = "green", lty = 2)
+     lines(as.Date(rownames(test.df)), lasso.pred, col = "red", lty = 2)
+     ## lines(as.Date(rownames(train.df)), fitted(nn.fit), col = "green", lty = 2)
+     ## lines(as.Date(rownames(test.df)), nn.pred, col = "red", lty = 2)    
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+wheat_usd.df = no_missing.df[, c("wheat_igc", "USD.EUR")]
+
+for(i in 1:150){
+    new_name = paste0("usd_lag", i)
+    wheat_usd.df[[new_name]] = c(rep(NA, i), wheat_usd.df[["USD.EUR"]][(1:(NROW(wheat_usd.df) - i))])
+}
+wheat_oil_final.df = na.omit(wheat_usd.df)
+
+n = NROW(wheat_oil_final.df)
+train_pct = 0.3
+cut_point = round(n * train_pct)
+train.df = wheat_oil_final.df[1:cut_point, ]
+test.df = wheat_oil_final.df[(cut_point + 1):n, ]
+
+## test.lm = lm(oil_future ~ ., data = train.df)
+
+lasso.fit = cv.glmnet(x = as.matrix(train.df[, -1]),
+                      y = as.matrix(train.df[, 1]),
+                      type.measure = "mse", nfolds = 20)
+lasso.pred = predict(lasso.fit, newx = as.matrix(test.df[, -1]))
+
+with(no_missing.df,
+{
+     plot(as.Date(rownames(no_missing.df)), wheat_igc, type = "l")
+     ## lines(as.Date(rownames(train.df)), fitted(test.lm), col = "green", lty = 2)
+     ## lines(as.Date(rownames(test.df)), predict(test.lm, test.df), col = "red", lty = 2)
+     lines(as.Date(rownames(train.df)), predict(lasso.fit, newx = as.matrix(train.df[, -1])), col = "green", lty = 2)
+     lines(as.Date(rownames(test.df)), lasso.pred, col = "red", lty = 2)
+     ## lines(as.Date(rownames(train.df)), fitted(nn.fit), col = "green", lty = 2)
+     ## lines(as.Date(rownames(test.df)), nn.pred, col = "red", lty = 2)    
+})
+
+
+
+
+
+
+
+
+
+eur.df = no_missing.df[, c("wheat_igc",
+                           grep("EUR", colnames(no_missing.df), value = TRUE))]
+n = NROW(eur.df)
+train_pct = 0.8
+cut_point = round(n * train_pct)
+train.df = eur.df[1:cut_point, ]
+test.df = eur.df[(cut_point + 1):n, ]
+
+## Testing with Granger's causality
+arima.fit = auto.arima(x = log(train.df[, 1]))
+arima.pred = predict(arima.fit, n.ahead = NROW(test.df))$pred
+
+varima.fit = auto.arima(x = log(train.df[, 1]), xreg = train.df[, -1])
+varima.pred = predict(varima.fit, newxreg = test.df[, -1])$pred
+
+plot(as.Date(rownames(eur.df)), eur.df$wheat_igc, type = "l")
+lines(as.Date(rownames(eur.df)),
+      exp(c(fitted(arima.fit), arima.pred)), col = "red")
+lines(as.Date(rownames(eur.df)),
+      exp(c(fitted(varima.fit), varima.pred)), col = "green")

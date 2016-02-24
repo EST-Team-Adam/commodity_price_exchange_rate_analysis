@@ -80,4 +80,53 @@ final.zoo = as.zoo(as.matrix(final.df[, -1]), final.df[, 1])
 final.rreg = rollapply(final.zoo, width = 260, FUN = dolm, by.column = FALSE)
 rreg.df = as.data.frame(final.rreg)
 colnames(rreg.df) = c("Intercept", colnames(final.df)[-c(1, 2)])
-rreg.df$date = final.df[(window.size + 1):NROW(final.df), "date"]
+rownames(rreg.df) = final.df[(window.size):NROW(final.df), "date"]
+
+
+notAllZero = function(x){
+    !all(x == 0)
+}
+
+nonZeroCoef = colnames(rreg.df)[sapply(rreg.df, notAllZero)]
+rregNonZero.df = rreg.df[, nonZeroCoef]
+
+par(mfrow = c(2, 1), mar = c(2.1, 4.1, 4.1, 1))
+plot(final.df[window.size:NROW(final.df), "date"],
+     final.df[window.size:NROW(final.df), "log_wheat_index_igc"],
+     type = "l", ylab = "Logged Wheat Price")
+for(i in 2:NCOL(rregNonZero.df)){
+    name = colnames(rregNonZero.df)[i]
+    if(i == 2)
+        plot(as.Date(rownames(rregNonZero.df)), rregNonZero.df[, name], type = "l",
+             ylim = c(-0.1, 1))
+    if(max(abs(rregNonZero.df[, name])) >= 0.079)
+        lines(as.Date(rownames(rregNonZero.df)), rregNonZero.df[, name])
+}
+
+
+head(sort(sapply(rregNonZero.df, function(x) max(abs(x))), decreasing = TRUE), 15)
+
+par(mfrow = c(6, 1), mar = c(2.1, 4.1, 0, 1))
+plot(final.df[window.size:NROW(final.df), "date"],
+     final.df[window.size:NROW(final.df), "log_wheat_index_igc"],
+     type = "l", ylab = "Logged Wheat Price")
+plot(as.Date(rownames(rregNonZero.df)), rregNonZero.df$USD.EUR_lag1, type = "l")
+plot(as.Date(rownames(rregNonZero.df)), rregNonZero.df$USD.CHF, type = "l")
+plot(as.Date(rownames(rregNonZero.df)), rregNonZero.df$USD.GBP, type = "l")
+plot(as.Date(rownames(rregNonZero.df)), rregNonZero.df$USD.CAD, type = "l")
+plot(as.Date(rownames(rregNonZero.df)), rregNonZero.df$USD.NZD, type = "l")
+
+
+negCoefVar =
+    colnames(rregNonZero.df)[(sapply(rregNonZero.df, mean) < 0 &
+                              sapply(rregNonZero.df,
+                                     function(x) max(abs(x))) > 0.04)]
+
+checkReg.df = rregNonZero.df[, negCoefVar]
+for(i in colnames(checkReg.df)){
+    if(i == colnames(checkReg.df)[1])
+        plot(as.Date(rownames(checkReg.df)), checkReg.df[, i], type = "l",
+             ylim = c(-1.1, 1))
+    if(max(abs(checkReg.df[, i])) >= 0.04)
+        lines(as.Date(rownames(checkReg.df)), checkReg.df[, i])
+}

@@ -5,6 +5,7 @@
 
 load("final.Rdata")
 library(glmnet)
+library(zoo)
 
 ## Build train and test set for prediction and validation
 n = NROW(final.df)
@@ -74,6 +75,9 @@ dolm <- function(data){
     as.numeric(coef(fit))
 }
 
-
-final.zoo = as.zoo(as.matrix(final.df[1:270, -1]), final.df[1:270, 1])
+window.size = 260
+final.zoo = as.zoo(as.matrix(final.df[, -1]), final.df[, 1])
 final.rreg = rollapply(final.zoo, width = 260, FUN = dolm, by.column = FALSE)
+rreg.df = as.data.frame(final.rreg)
+colnames(rreg.df) = c("Intercept", colnames(final.df)[-c(1, 2)])
+rreg.df$date = final.df[(window.size + 1):NROW(final.df), "date"]

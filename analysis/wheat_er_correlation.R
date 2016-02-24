@@ -8,6 +8,8 @@ load("final.Rdata")
 ## Examine the ACF and the PACF
 acf(final.df$log_wheat_index_igc, lag.max = 1000)
 pacf(final.df$log_wheat_index_igc, lag.max = 10)
+acf(diff(final.df$log_wheat_index_igc), lag.max = 100)
+pacf(diff(final.df$log_wheat_index_igc), lag.max = 10)
 
 ## Compute running correlation, the rolling window is 260, which
 ## corresponds to 260 days or approximately 1 year.

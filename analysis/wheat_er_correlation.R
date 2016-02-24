@@ -11,6 +11,13 @@ pacf(final.df$log_wheat_index_igc, lag.max = 10)
 acf(diff(final.df$log_wheat_index_igc), lag.max = 100)
 pacf(diff(final.df$log_wheat_index_igc), lag.max = 10)
 
+## Examine the CCF
+par(mfrow = c(7, 3), mar = c(0, 4, 0, 0))
+for(i in grep("USD\\.[A-Z]+$", colnames(final.df), value = TRUE)){
+    ccf(diff(final.df[, "log_wheat_index_igc"]), diff(final.df[, i]),
+        ylab = i)
+}
+
 ## Compute running correlation, the rolling window is 260, which
 ## corresponds to 260 days or approximately 1 year.
 xsetname = colnames(final.df)[3:NCOL(final.df)]

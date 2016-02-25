@@ -104,8 +104,6 @@ for(i in 2:NCOL(rregNonZero.df)){
 }
 
 
-head(sort(sapply(rregNonZero.df, function(x) max(abs(x))), decreasing = TRUE), 15)
-
 par(mfrow = c(6, 1), mar = c(2.1, 4.1, 0, 1))
 plot(final.df[window.size:NROW(final.df), "date"],
      final.df[window.size:NROW(final.df), "log_wheat_index_igc"],
@@ -117,16 +115,118 @@ plot(as.Date(rownames(rregNonZero.df)), rregNonZero.df$USD.CAD, type = "l")
 plot(as.Date(rownames(rregNonZero.df)), rregNonZero.df$USD.NZD, type = "l")
 
 
-negCoefVar =
-    colnames(rregNonZero.df)[(sapply(rregNonZero.df, mean) < 0 &
-                              sapply(rregNonZero.df,
-                                     function(x) max(abs(x))) > 0.04)]
+## Here we extract the top 15 significant variables excluding the
+## intercept to fit the relaxed regression.
+sigCoefVar = names(head(sort(sapply(rregNonZero.df[-1],
+                                    function(x) max(abs(x))), decreasing = TRUE),
+                        15))
+relaxedReg.df = final.df[, c("log_wheat_index_igc", "date", sigCoefVar)]
 
-checkReg.df = rregNonZero.df[, negCoefVar]
-for(i in colnames(checkReg.df)){
-    if(i == colnames(checkReg.df)[1])
-        plot(as.Date(rownames(checkReg.df)), checkReg.df[, i], type = "l",
-             ylim = c(-1.1, 1))
-    if(max(abs(checkReg.df[, i])) >= 0.04)
-        lines(as.Date(rownames(checkReg.df)), checkReg.df[, i])
+## Run rolling relaxed regression
+window.size = 260
+rollingInd =
+    lapply(0:(NROW(final.df) - window.size),
+           FUN = function(x) x + (1:window.size))
+
+rollRelaxReg = 
+    lapply(rollingInd,
+           FUN = function(ind){
+               lm(log_wheat_index_igc ~. -date, data = relaxedReg.df[ind, ])
+           })
+
+par(mfrow = c(3, 1), mar = rep(0, 4))
+## Rolling fit
+with(final.df, plot(date, log_wheat_index_igc, lwd = 2, type = "n"))
+sapply(rollRelaxReg,
+       FUN = function(x) lines(x$model$date, fitted(x), lty = 2, col = "red"))
+with(final.df, lines(date, log_wheat_index_igc, lwd = 5))
+
+## NOTE (Michael): The rolling fit shows that with 16 variable, the
+##                 fit is satisfactory.
+
+
+## rolling prediction for 30 days in the future
+with(final.df, plot(date, log_wheat_index_igc, lwd = 2, type = "n"))
+mapply(FUN = function(model, newdata){
+    lines(newdata$date, predict(model, newdata), lty = 2, col = "red")
+}, model = rollRelaxReg[-c((length(rollRelaxReg) - 29):length(rollRelaxReg))],
+newdata = lapply(rollRelaxReg, FUN = function(x) x$model)[-c(1:30)])
+with(final.df, lines(date, log_wheat_index_igc, lwd = 5))
+
+## rolling prediction for 60 days in the future
+with(final.df, plot(date, log_wheat_index_igc, lwd = 2, type = "n"))
+mapply(FUN = function(model, newdata){
+    lines(newdata$date, predict(model, newdata), lty = 2, col = "red")
+}, model = rollRelaxReg[-c((length(rollRelaxReg) - 89):length(rollRelaxReg))],
+newdata = lapply(rollRelaxReg, FUN = function(x) x$model)[-c(1:90)])
+with(final.df, lines(date, log_wheat_index_igc, lwd = 5))
+
+
+## Coefficients of the relaxed rolling regression
+rollRelaxRegCoef.lst = lapply(rollRelaxReg, coef)
+rollRelaxRegCoef.df =
+    data.frame(Reduce(f = function(x, y) rbind(x, y), rollRelaxRegCoef.lst))
+colnames(rollRelaxRegCoef.df)[1] = "Intercept"
+
+par(mfrow = c(8, 2), mar = rep(0, 4))
+## plot(final.df[(window.size):NROW(final.df), "date"],
+##       rollRelaxRegCoef.df[, colnames(rollRelaxRegCoef.df)[1]],
+##       type = "n")
+with(final.df[-c(1:window.size), ], plot(date, log_wheat_index_igc, type = "l"))
+for(i in 1:NCOL(rollRelaxRegCoef.df)){
+    if(i == 3)
+        next
+    ## if(i == 1){
+    ##     with(final.df[-c(1:window.size), ],
+    ##          plot(date, log_wheat_index_igc, type = "n"))
+    ##     lines(final.df[(window.size):NROW(final.df), "date"],
+    ##          rollRelaxRegCoef.df[, colnames(rollRelaxRegCoef.df)[i]],
+    ##          type = "l")
+    ##     legend("topleft", colnames(rollRelaxRegCoef.df)[i], bty = "n")
+    ##     abline(h = 0, col = "red", lty = 2)
+    ## } else {
+        plot(final.df[(window.size):NROW(final.df), "date"],
+             rollRelaxRegCoef.df[, colnames(rollRelaxRegCoef.df)[i]],
+             type = "l")
+        legend("topleft", colnames(rollRelaxRegCoef.df)[i], bty = "n")
+        abline(h = 0, col = "red", lty = 2)
+    ## }
 }
+
+
+
+
+
+## Split the data in 100 fold, and fit regression to each
+## foldSize = 260
+## nFold = ceiling(NROW(final.df)/foldSize)
+
+nFold = 30
+foldSize = ceiling(NROW(final.df)/(nFold + 1))
+init = 0
+partition = vector("list", length = nFold)
+for(i in 1:nFold){
+    if(i == nFold){
+        partition[[i]] = final.df[init:NROW(final.df), ]
+    } else {
+        partition[[i]] = final.df[(init + 1):(init + foldSize), ]
+    }
+    init = init + foldSize
+}
+
+partitionModel =
+    lapply(partition,
+           FUN = function(x){
+               cv.glmnet(x = as.matrix(x[, -c(1, 2)]),
+                         y = as.matrix(x[, 2]))
+           })    
+
+with(final.df, plot(date, log_wheat_index_igc, type = "l", lwd = 2))
+mapply(FUN = function(x, y){
+    lines(y[, 1],
+          predict(x, newx = as.matrix(y[, -c(1, 2)])), col = "green", lty = 2)
+}, x = partitionModel, y = partition)
+mapply(FUN = function(x, y){
+    lines(y[, 1],
+          predict(x, newx = as.matrix(y[, -c(1, 2)])), col = "red", lty = 2)
+}, x = partitionModel[-length(partitionModel)], y = partition[-1])

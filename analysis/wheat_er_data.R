@@ -12,7 +12,7 @@ wheat_igc.df$log_wheat_index_igc = log(wheat_igc.df$wheat_index_igc)
 wheat_igc.df$wheat_index_igc = NULL
 
 ## Get exchange rate data
-top10currencies = c("EUR", "JPY", "GBP", "CHF", "CAD", "MXN", "NZD")
+top10currencies = c("EUR", "JPY", "GBP", "CAD", "MXN", "NZD")
 top10producingCurrencies = c("INR", "RUB", "PKR", "AUD", "UAH")
 top10tradingCurrencies = c("KZT", "TRY", "BRL", "EGP", "IDR", "DZD", "PHP",
                            "NGN", "KRW")

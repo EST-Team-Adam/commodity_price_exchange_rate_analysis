@@ -58,11 +58,6 @@ nonInterceptCoef = lasso.coef[-1]
 names(nonInterceptCoef) = rownames(lasso.coef)[-1]
 (topCoef = head(sort(abs(nonInterceptCoef), decreasing = TRUE), 50))
 
-## NOTE (Michael): From the fact that the most significant
-##                 coefficients are always approaching the maximum lag
-##                 given, it would suggest that the lag of the model
-##                 is extremely large.
-
 
 ## NOTE (Michael): It also seems like that thet most significant lag
 ##                 also changes, that means the response time of
@@ -104,22 +99,49 @@ for(i in 2:NCOL(rregNonZero.df)){
 }
 
 
-par(mfrow = c(6, 1), mar = c(2.1, 4.1, 0, 1))
+## Most significant lag
+checkLag = function(x){
+    nonZero = x[which(x != 0)]
+    ## sort(nonZero, decreasing = TRUE)
+    sort(unique(as.numeric(gsub("[^0-9]", "", names(nonZero)))))
+}
+
+par(mfrow = c(2, 1))
+lagNum = apply(rregNonZero.df, 1, checkLag)
+with(final.df[window.size:NROW(final.df), ],
+     plot(date, log_wheat_index_igc, type = "l"))
+plot(as.Date(names(lagNum)), sapply(lagNum, max), type = "l")
+
+
+checkLag = function(x){
+    lagNum = as.numeric(gsub("[^0-9]", "", names(x)))
+    filter =  lagNum > 2 & !is.na(lagNum)
+    maxLag = which.max(x[filter])
+    as.numeric(gsub("[^0-9]", "", names(x)[maxLag]))
+}
+
+par(mfrow = c(2, 1))
+lagNum = apply(rregNonZero.df, 1, checkLag)
+with(final.df[window.size:NROW(final.df), ],
+     plot(date, log_wheat_index_igc, type = "l"))
+plot(as.Date(names(lagNum)), lagNum, type = "l")
+
+
+par(mfrow = c(5, 1), mar = c(2.1, 4.1, 0, 1))
 plot(final.df[window.size:NROW(final.df), "date"],
      final.df[window.size:NROW(final.df), "log_wheat_index_igc"],
      type = "l", ylab = "Logged Wheat Price")
 plot(as.Date(rownames(rregNonZero.df)), rregNonZero.df$USD.EUR_lag1, type = "l")
-plot(as.Date(rownames(rregNonZero.df)), rregNonZero.df$USD.CHF, type = "l")
 plot(as.Date(rownames(rregNonZero.df)), rregNonZero.df$USD.GBP, type = "l")
 plot(as.Date(rownames(rregNonZero.df)), rregNonZero.df$USD.CAD, type = "l")
 plot(as.Date(rownames(rregNonZero.df)), rregNonZero.df$USD.NZD, type = "l")
 
-
 ## Here we extract the top 15 significant variables excluding the
 ## intercept to fit the relaxed regression.
+nComponents = 5
 sigCoefVar = names(head(sort(sapply(rregNonZero.df[-1],
                                     function(x) max(abs(x))), decreasing = TRUE),
-                        15))
+                        nComponents))
 relaxedReg.df = final.df[, c("log_wheat_index_igc", "date", sigCoefVar)]
 
 ## Run rolling relaxed regression
@@ -134,32 +156,6 @@ rollRelaxReg =
                lm(log_wheat_index_igc ~. -date, data = relaxedReg.df[ind, ])
            })
 
-par(mfrow = c(3, 1), mar = rep(0, 4))
-## Rolling fit
-with(final.df, plot(date, log_wheat_index_igc, lwd = 2, type = "n"))
-sapply(rollRelaxReg,
-       FUN = function(x) lines(x$model$date, fitted(x), lty = 2, col = "red"))
-with(final.df, lines(date, log_wheat_index_igc, lwd = 5))
-
-## NOTE (Michael): The rolling fit shows that with 16 variable, the
-##                 fit is satisfactory.
-
-
-## rolling prediction for 30 days in the future
-with(final.df, plot(date, log_wheat_index_igc, lwd = 2, type = "n"))
-mapply(FUN = function(model, newdata){
-    lines(newdata$date, predict(model, newdata), lty = 2, col = "red")
-}, model = rollRelaxReg[-c((length(rollRelaxReg) - 29):length(rollRelaxReg))],
-newdata = lapply(rollRelaxReg, FUN = function(x) x$model)[-c(1:30)])
-with(final.df, lines(date, log_wheat_index_igc, lwd = 5))
-
-## rolling prediction for 60 days in the future
-with(final.df, plot(date, log_wheat_index_igc, lwd = 2, type = "n"))
-mapply(FUN = function(model, newdata){
-    lines(newdata$date, predict(model, newdata), lty = 2, col = "red")
-}, model = rollRelaxReg[-c((length(rollRelaxReg) - 89):length(rollRelaxReg))],
-newdata = lapply(rollRelaxReg, FUN = function(x) x$model)[-c(1:90)])
-with(final.df, lines(date, log_wheat_index_igc, lwd = 5))
 
 
 ## Coefficients of the relaxed rolling regression
@@ -168,30 +164,81 @@ rollRelaxRegCoef.df =
     data.frame(Reduce(f = function(x, y) rbind(x, y), rollRelaxRegCoef.lst))
 colnames(rollRelaxRegCoef.df)[1] = "Intercept"
 
-par(mfrow = c(8, 2), mar = rep(0, 4))
-## plot(final.df[(window.size):NROW(final.df), "date"],
-##       rollRelaxRegCoef.df[, colnames(rollRelaxRegCoef.df)[1]],
-##       type = "n")
-with(final.df[-c(1:window.size), ], plot(date, log_wheat_index_igc, type = "l"))
+par(mfrow = c(ceiling((nComponents + 2)/2), 2), mar = rep(0, 4))
+with(final.df[-c(1:window.size), ],
+     plot(date, log_wheat_index_igc, type = "l"))
 for(i in 1:NCOL(rollRelaxRegCoef.df)){
-    if(i == 3)
-        next
-    ## if(i == 1){
-    ##     with(final.df[-c(1:window.size), ],
-    ##          plot(date, log_wheat_index_igc, type = "n"))
-    ##     lines(final.df[(window.size):NROW(final.df), "date"],
-    ##          rollRelaxRegCoef.df[, colnames(rollRelaxRegCoef.df)[i]],
-    ##          type = "l")
-    ##     legend("topleft", colnames(rollRelaxRegCoef.df)[i], bty = "n")
-    ##     abline(h = 0, col = "red", lty = 2)
-    ## } else {
-        plot(final.df[(window.size):NROW(final.df), "date"],
-             rollRelaxRegCoef.df[, colnames(rollRelaxRegCoef.df)[i]],
-             type = "l")
-        legend("topleft", colnames(rollRelaxRegCoef.df)[i], bty = "n")
-        abline(h = 0, col = "red", lty = 2)
-    ## }
+    plot(final.df[(window.size):NROW(final.df), "date"],
+         rollRelaxRegCoef.df[, colnames(rollRelaxRegCoef.df)[i]],
+         type = "l", ylim = range(rollRelaxRegCoef.df))
+    legend("topleft", colnames(rollRelaxRegCoef.df)[i], bty = "n")
+    abline(h = 0, col = "red", lty = 2)
 }
+
+
+## Show the fit components
+fitComponent =
+    as.matrix(final.df[window.size:NROW(final.df), sigCoefVar]) *
+    as.matrix(rollRelaxRegCoef.df[, -1])
+par(mfrow = c(ceiling((nComponents + 1)/2), 2), mar = rep(0, 4))
+with(final.df[-c(1:window.size), ],
+     plot(date, log_wheat_index_igc, type = "l",
+          ylim = range(fitComponent, final.df$log_wheat_index_igc)))
+for(i in 1:NCOL(fitComponent)){
+    plot(final.df[window.size:NROW(final.df), "date"],
+         fitComponent[, i], type = "l",
+         ylim = range(fitComponent, final.df$log_wheat_index_igc))
+}
+
+
+## Show the rolling fit and the predictions
+##
+## NOTE (Michael): The rolling fit shows that with 16 variable, the
+##                 fit is satisfactory.
+
+fit =
+    lapply(rollRelaxReg, function(x){
+        data.frame(date = x$model$date, fit = fitted(x))
+    })
+    
+pred30day =
+    mapply(FUN = function(model, newdata){
+        data.frame(date = newdata$date, pred = predict(model, newdata))
+    },
+    model = rollRelaxReg[-c((length(rollRelaxReg) - 29):length(rollRelaxReg))],
+    newdata = lapply(rollRelaxReg, FUN = function(x) x$model)[-c(1:30)],
+    SIMPLIFY = FALSE)
+
+pred60day =
+    mapply(FUN = function(model, newdata){
+        data.frame(date = newdata$date, pred = predict(model, newdata))        
+    },
+    model = rollRelaxReg[-c((length(rollRelaxReg) - 59):length(rollRelaxReg))],
+    newdata = lapply(rollRelaxReg, FUN = function(x) x$model)[-c(1:60)],
+    SIMPLIFY = FALSE)
+fullRange =
+    range(sapply(fit, function(x) range(x$fit)),
+          sapply(pred30day, function(x) range(x$pred)),
+          sapply(pred60day, function(x) range(x$pred)))
+
+par(mfrow = c(3, 1), mar = rep(0, 4))
+## Rolling fit
+with(final.df, plot(date, log_wheat_index_igc, lwd = 2, type = "n",
+                    ylim = fullRange))
+lapply(fit, function(x) with(x, lines(x$date, x$fit, col = "red")))
+with(final.df, lines(date, log_wheat_index_igc, lwd = 5))
+
+## rolling prediction for 30 days in the future
+with(final.df, plot(date, log_wheat_index_igc, lwd = 2, type = "n",
+                    ylim = fullRange))
+lapply(pred30day, function(x) with(x, lines(x$date, x$pred, col = "red")))
+with(final.df, lines(date, log_wheat_index_igc, lwd = 5))
+
+## rolling prediction for 60 days in the future
+with(final.df, plot(date, log_wheat_index_igc, lwd = 2, type = "n",
+                    ylim = fullRange))
+lapply(pred60day, function(x) with(x, lines(x$date, x$pred, col = "red")))
+with(final.df, lines(date, log_wheat_index_igc, lwd = 5))
 
 
 

@@ -36,6 +36,7 @@ runcorvar = sapply(runcor.lst, var, na.rm = TRUE)
 names(runcorvar) = xsetname
 
 ## Select the most stable running correlation with the smallest variance
+exchange_rate_names = grep("^USD.[A-Z]+$", colnames(final.df), value = TRUE)
 stable_cor_list = vector("numeric", length(exchange_rate_names))
 for(i in 1:length(exchange_rate_names)){
     cur_name = exchange_rate_names[i]

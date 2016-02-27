@@ -47,18 +47,25 @@ er.df =
                      from = min(wheat_igc.df$date),
                      to = max(wheat_igc.df$date))
 
-## Create lagged terms for the exchange rates, here we have created 60
-## lags, or approximately 2 months.
-for(i in exchange_rate_names){
-    for(j in 1:260){
-        new_name = paste0(i, "_lag", j)
-        er.df[[new_name]] = c(rep(NA, j), er.df[[i]][(1:(NROW(er.df) - j))])
-    }
-}
 ## Create time
 er.df$date = as.Date(rownames(er.df))
 
 ## Construct the final data frame
-final.df = na.omit(merge(wheat_igc.df, er.df, by = "date", all = FALSE))
+merged.df = na.omit(merge(wheat_igc.df, er.df, by = "date", all = FALSE))
+
+## Create the lagged terms. We create the lagged terms after the
+## mergee as the sampling frequency of the wheat price and the
+## exchange rates are different.
+lagNum = 260
+for(i in exchange_rate_names){
+    for(j in 1:lagNum){
+        new_name = paste0(i, "_lag", j)
+        merged.df[[new_name]] =
+            c(rep(NA, j), merged.df[[i]][(1:(NROW(merged.df) - j))])
+    }
+}
+
+
+final.df = na.omit(merged.df)
 
 save(final.df, file = "final.Rdata")

@@ -120,12 +120,15 @@ checkLag = function(x){
     as.numeric(gsub("[^0-9]", "", names(x)[maxLag]))
 }
 
-par(mfrow = c(2, 1))
 lagNum = apply(rregNonZero.df, 1, checkLag)
+
+jpeg(file = "max_sig_lag.jpg", width = 720)
+par(mfrow = c(2, 1))
 with(final.df[window.size:NROW(final.df), ],
      plot(date, log_wheat_index_igc, type = "l"))
-plot(as.Date(names(lagNum)), lagNum, type = "l")
-
+plot(as.Date(names(lagNum)), lagNum, type = "l", xlab = "date",
+     ylab = "Maximum Significant Lag")
+graphics.off()
 
 par(mfrow = c(5, 1), mar = c(2.1, 4.1, 0, 1))
 plot(final.df[window.size:NROW(final.df), "date"],
@@ -138,7 +141,7 @@ plot(as.Date(rownames(rregNonZero.df)), rregNonZero.df$USD.NZD, type = "l")
 
 ## Here we extract the top 15 significant variables excluding the
 ## intercept to fit the relaxed regression.
-nComponents = 5
+nComponents = 10
 sigCoefVar = names(head(sort(sapply(rregNonZero.df[-1],
                                     function(x) max(abs(x))), decreasing = TRUE),
                         nComponents))
@@ -164,6 +167,7 @@ rollRelaxRegCoef.df =
     data.frame(Reduce(f = function(x, y) rbind(x, y), rollRelaxRegCoef.lst))
 colnames(rollRelaxRegCoef.df)[1] = "Intercept"
 
+jpeg(file = "rolling_relax_coef.jpg", width = 720, height = 720)
 par(mfrow = c(ceiling((nComponents + 2)/2), 2), mar = rep(0, 4))
 with(final.df[-c(1:window.size), ],
      plot(date, log_wheat_index_igc, type = "l"))
@@ -174,7 +178,7 @@ for(i in 1:NCOL(rollRelaxRegCoef.df)){
     legend("topleft", colnames(rollRelaxRegCoef.df)[i], bty = "n")
     abline(h = 0, col = "red", lty = 2)
 }
-
+graphics.off()
 
 ## Show the fit components
 fitComponent =
@@ -221,26 +225,27 @@ fullRange =
           sapply(pred30day, function(x) range(x$pred)),
           sapply(pred60day, function(x) range(x$pred)))
 
+jpeg(file = "rolling_pred.jpeg", width = 720)
 par(mfrow = c(3, 1), mar = rep(0, 4))
 ## Rolling fit
 with(final.df, plot(date, log_wheat_index_igc, lwd = 2, type = "n",
                     ylim = fullRange))
 lapply(fit, function(x) with(x, lines(x$date, x$fit, col = "red")))
 with(final.df, lines(date, log_wheat_index_igc, lwd = 5))
-
+legend("topleft", "fit", bty = "n")
 ## rolling prediction for 30 days in the future
 with(final.df, plot(date, log_wheat_index_igc, lwd = 2, type = "n",
                     ylim = fullRange))
 lapply(pred30day, function(x) with(x, lines(x$date, x$pred, col = "red")))
 with(final.df, lines(date, log_wheat_index_igc, lwd = 5))
-
+legend("topleft", "Prediction 30 Days Ahead", bty = "n")
 ## rolling prediction for 60 days in the future
 with(final.df, plot(date, log_wheat_index_igc, lwd = 2, type = "n",
                     ylim = fullRange))
 lapply(pred60day, function(x) with(x, lines(x$date, x$pred, col = "red")))
 with(final.df, lines(date, log_wheat_index_igc, lwd = 5))
-
-
+legend("topleft", "Prediction 60 Days Ahead", bty = "n")
+graphics.off()
 
 
 

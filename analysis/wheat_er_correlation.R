@@ -2,21 +2,31 @@
 ## This script examines the correlation relationship betwee the wheat
 ## price index and the exchange rates
 ########################################################################
-
+library(TTR)
 load("final.Rdata")
 
+savePlot = TRUE
+
 ## Examine the ACF and the PACF
-acf(final.df$log_wheat_index_igc, lag.max = 1000)
-pacf(final.df$log_wheat_index_igc, lag.max = 10)
+jpeg(file = "wheat_acf_pacf.jpg", width = 720)
+par(mfrow = c(2, 1))
+with(final.df, {
+    acf(log_wheat_index_igc, lag.max = 1000)
+    pacf(log_wheat_index_igc, lag.max = 10)
+})
+graphics.off()
+
 acf(diff(final.df$log_wheat_index_igc), lag.max = 100)
 pacf(diff(final.df$log_wheat_index_igc), lag.max = 10)
 
 ## Examine the CCF
+jpeg(file = "all_ccf.jpg", width = 720, height = 720)
 par(mfrow = c(7, 3), mar = c(0, 4, 0, 0))
 for(i in grep("USD\\.[A-Z]+$", colnames(final.df), value = TRUE)){
     ccf(diff(final.df[, "log_wheat_index_igc"]), diff(final.df[, i]),
         ylab = i)
 }
+graphics.off()
 
 ## Compute running correlation, the rolling window is 260, which
 ## corresponds to 260 days or approximately 1 year.
@@ -47,6 +57,7 @@ for(i in 1:length(exchange_rate_names)){
 }
 
 ## Plot the most stable running correlation for each currency
+jpeg(file = "run_cor.jpg", width = 720, height = 720)
 par(mfrow = c(7, 3), mar = c(0, 4, 0, 0))
 for(i in names(stable_cor_list)){
     plot(final.df$date,
@@ -54,6 +65,7 @@ for(i in names(stable_cor_list)){
     ## abline(h = mean(runcor.df[[i]], na.rm = TRUE), col = "blue", lty = 2)
     abline(h = 0, col = "red", lty = 2)
 }
+graphics.off()
 
 ## Compute the overall correlation
 overallcor = cor(final.df[, 2], final.df[, -c(1, 2)],
@@ -85,6 +97,7 @@ for(i in 1:length(exchange_rate_names)){
 }
 
 
+jpeg(file = "simple_cor.jpeg", width = 720)
 par(mfrow = c(7, 3), mar = c(0, 0, 0, 0))
 for(i in names(max_cor_list)){
     plot(final.df$log_wheat_index_igc, final.df[[i]],
@@ -92,6 +105,7 @@ for(i in names(max_cor_list)){
     legend("topright", i, bty = "n")
     box()
 }
+graphics.off()
 
 
 ## NOTE (Michael): Should show a plot of the Pakistan to illustrate

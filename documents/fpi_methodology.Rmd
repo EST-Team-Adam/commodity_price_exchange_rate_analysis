@@ -1,0 +1,229 @@
+#Exploratory Analysis on the Relationship Between Exchange Rates and
+the IGC Wheat Index
+
+## Introduction
+
+The analysis of the Food Price Index has always been the biggest prize
+in agricultural economics. The implication can not be overlooked with
+potential to revolutionize agriculture policies and strategies.
+
+Extensive amount of studies has been conducted in the past, but few
+were conclusive. This exploratory paper is part of the larger project
+which attempts explain the drivers of general food price.
+
+The aim of the this study is to establish whether any relationship
+exist between the wheat price index and the exchange rates, moreover,
+whether the exchange rates drives the wheat price.
+
+
+## Data
+
+In contrast to most study where the analysis is conducted on the
+monthly Food Price Index, we have taken a different approach.
+
+First of all, we deconstruct the Food Price Index and analyse its
+components separately. In another word, each components of the Food
+Price Index such as wheat, rice, lamb and seeds are analysed
+individually and independent conclusion are drawn accordingly. This
+report will focus solely on the analysis of the wheat price index
+published by the International Grains Council. There are several
+benefits associated with this approach. The decomposition of the
+analysis enable us to include only information that are relevant to
+the commodity of interest, this narrowing of information set will
+bring forward better inference and explanation of the
+relationship. Further, this approach should also provide better
+predictive performances.
+
+Secondly, the analysis is based on the daily prices of commodities in
+contrast to the monthly series of FPI. The expansion of the
+information set providing possibility of complex model for capturing
+complex relationship and more informative models.
+
+This decision to to decompose components and utilising data at their
+highest sampling frequency will devoid us from aggregation problem
+such as aliasing and Simpson’s paradox.
+
+The dataset used in this sub-study is the “wheat sub-index” obtained
+from the International Grains Council. This is also the only component
+of the “wheat sub-index under the Cereal Index of the Food Price
+Index. Thus, if we are able to understand and predict this series with
+fair accuracy, then the effect of wheat can then be isolated from the
+rest of the components in the Food Price Index. We have also logged
+the data to reduce the effect of skewness and to avoid negative
+prediction.
+
+The exchange rate basket used in this study composed of 20 currencies
+obtained from Oanda and includes major currencies traded and
+currencies of countries with large wheat production and trade as of
+2014. To simplify the analysis, the Chinese RMB was not included in
+the analysis as it was pegged to the USD until 2005. A separate study
+is required in order to account for the effect of change in
+regime. The Argentinian pesos is also excluded for the same reason and
+its hyper-inflation in recent years. The Swiss Franc CHF is excluded
+due to its extremely high correlation with the Euro. To assess the
+lagged effect, each variable is also lagged by 260 days or
+approximately 1 trading year.
+
+The final dataset constructed consists of 3,921 observations starting
+on the 2nd of January 2001 to 12th of January 2016, and a total of
+5,222 variables including the response and date. The initial data
+started from 3rd of January, but a whole year was used to construct
+the lags, and thus the final time series commence a year later than
+the raw data.  Exploratory Analysis
+
+## Correlation Analysis
+
+In this section, we present the result of the correlation analysis
+between the exchange rates data set and the logged wheat price index.
+
+We first show the autocorrelation and the partial autocorrelation of
+the logged wheat price index. It seems that the logged wheat price
+index can be modelled by a simple AR model indicated by the long lag
+of ACF and cut off of PACF. The strong dependency on the past also
+rejects the hypothesis that the wheat price follows a Random Walker
+process. Nevertheless, as our goal is to investigate the driving
+factors of the logged wheat price, we will not utilise the Box-Jenkin
+type of time series model as it does not provide any explanation and
+the autocorrelation coefficients may potential over capture the
+movements.
+
+
+
+
+
+Next, we examine the cross-correlation function with the non-lagged
+currency in the next graph. Both the logged wheat price and the
+exchange rates are differenced. The maximum lag seems to be at either
+0 or -1 and all significant correlation are negative. This suggests
+that either the wheat price is the lead indicator, a different
+variable drives both, or that the sampling frequency can not
+distinguish the lead and lag variable. However, there is no evidence
+that the exchange rate drives the wheat price.
+
+
+
+
+
+We then examine the correlation over the whole period. Shown below is
+the scatter plot of each currency in the basket with respect to the
+logged wheat price index. The selection of the lag for each currency
+is based on the lag which provides the highest correlation with the
+wheat price.
+
+From the graph, we can see that several exchange rates appear to be
+linearly correlated to the logged wheat price index. Namely, USD to
+EUR,CAD, NZD, AUD, and PHP.
+
+
+It is naive to assume that the correlation is constant and assume the
+relationship exists over the very long run. This very long run
+relationship also makes the prediction entirely impractical. Thus we
+will focus on the rolling correlation which focus on the local
+behavior of the time series.
+
+The running correlation is computed for every exchange rate and its
+lag with the logged wheat price index. We have computed the running
+correlation over a sliding window of 260 days which corresponds to
+approximately a single trading year. In order to choose the running
+correlation which bears the strongest relationship we choose one which
+has the lowest variance. That is, we are choosing the variable which
+has the most consistent relationship with the logged wheat price
+index. Without a stable coefficient, any non-dynamic model are
+meaningless, and will generate shocking prediction.
+
+Below, we show the graph of the running correlation for each selected
+currency. From the figure, we can see that all of the exchange rate
+time series is anything but stable. The correlation coefficient over
+the investigated period can range from -1 to +1 and can change sign
+from almost 0.8 to -0.8 in just two to three months.
+
+
+
+
+
+The combined analysis suggests that the relationship between the
+exchange rate only holds over large period (> 5 years) and the short
+term relationship is unclear if exist at all.  Regression Analysis
+After analysis of the univariate correlation, we would like to examine
+how the relationship hold in a multivariate context. To do this, we
+perform both the rolling regression of logged wheat price on the
+exchange rates set.
+
+In order to perform the rolling regression, we resort to a method
+known as LASSO instead of the standard normal regression. The reason
+for this being that in each subset of the rolling regression, the
+window size of 260 causes the number of variable to be greater than
+the number of observations. The LASSO which regularises the
+coefficients will shrink all non-significant coefficients to zero, and
+retain only variables that are worth considering. This is known as
+feature selection. After the LASSO is conducted for variable
+selection, we then refit the rolling regression on the significant
+variable with a standard linear regression. The overall approach is
+known as relaxed LASSO.
+
+After we have conducted the LASSO, we examined the variables which
+were retained. The following graph shows the maximum lag number at
+each period. The graph shows that the most significant lag of the
+rolling LASSO changes over time, what this implies is that the
+response time between the wheat price and exchange rates changes.
+
+
+
+Shown below is the wheat time series with the rolling regression
+coefficients. From the graph we can see that the coefficients are very
+close to zero indicated by the dashed red line majority of the time,
+however, the coefficient becomes significant larger and can switch
+signs during volatile period such as the 2008 food crisis and the
+following period around 2012 to 2013, and also around 2004. This
+indicates that the exchange rates plays a very insignificant role
+during normal times, but the weight increases during periods of
+instability. This is also supported by the large value of intercept,
+which are changes which can not be explained by the exchange
+rates. However, we have high reservation on whether the volatilities
+of the wheat market is driven by the exchange rate. Rather, we believe
+the volatile wheat market may have impact on the exchange rate market
+as suggested by the Cross-correlation function in the previous
+section.
+
+
+## Predictive Analysis
+
+In the following graph, we show both the fit and the rolling forecast
+of the rolling relaxed regression. The fit appears to be satisfactory,
+however, the rolling forecast shows a slightly different story. The
+rolling forecast depicts the variability of the accuracy deteriorates
+during the unstable period we have mentioned above and it appears that
+there is a lag in the prediction. The lag may have resulted from
+either the exchange rate is not the driving force of the wheat price,
+or that the coefficients are not adjusted over time to account for the
+dynamics. In either scenario, it would suggest that using solely the
+exchange rate time series would not generate desirable prediction.
+
+
+## Conclusion
+
+All in all, very little conclusion can be drawn, but the analysis has
+revealed many valuable insight in how we can proceed in the future. We
+would conclude that the exchange rate plays a very minor role in the
+driving of the wheat market if not the other way around. The analysis
+shows there are other forces and factor which plays a much larger role
+than the exchange rate which requires detailed investigation.
+
+The most important key findings are in the complex dynamics between
+the time series. Firstly, the exchange rate only show significant
+coefficients during period of high volatility. Secondly, the
+coefficient during the volatile period are themselves also
+volatile. Further, the most significant lag selected in the LASSO
+varies over time.
+
+
+## Future Works
+
+
+Conduct analysis to determine whether the wheat market drives the
+exchange rate.  Investigate the source of the dynamic and implement
+dynamic model such as dlm to incorporate such feature.  Investigate
+whether the same relationship is exhibited by other commodities in the
+Food Price Index Include train test set in the Rolling LASSO, so that
+the variables selected are based on predictability of the future
+rather than the predictability of the current event.

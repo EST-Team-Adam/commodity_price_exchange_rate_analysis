@@ -7,9 +7,6 @@ output:
     theme: united
 ---
 
-# Exploratory Analysis on the Relationship Between Exchange Rates and
-the IGC Wheat Index
-
 ## Introduction
 
 The analysis of the Food Price Index has always been the biggest prize
